@@ -1,0 +1,15 @@
+What additional properties did you add to your models and why?
+To the Game model, I added:
+-num_card_types: a field containing the number of card types.  This is set by the user upon game creation and determines the board size and game difficulty.  The bigger the number, the bigger the board, and higher number of possible card combinations.
+-board: an ordered array of numbers containing the cards on the board.  To prevent the user from seeing the cards uncovered, I mask this board when rendering it to back to the user in a form.
+-matched_cards: an array of positions containing the cards that have been matched by the user.  This is used as a filter to cover cards on the board that haven't been revealed yet when it's rendered to the user.
+-last_guessed_card_1, last_guessed_card_2: Contains the most recently guessed cards by the user.  These are used during board rendering to distinguish guessed cards from previously revealed cards.
+-attempts: contains number of valid attempts the user has made during the game.  Faster to keep this as a simple int rather than querying Move objects and getting a count.
+-last_move: used to track the last time the game was modified to determine which users to remind about unfinished games.  Only unfinished games last played over a day ago are considered for user notification.
+
+I also added a Move model containing the player's move (two selected cards) and the result message.  I used this data structure rather than attaching a history property to the Game model since games could consist of hundreds of moves.  A single history property would have required loading the string, evaluating it, appending the move to the history array, and storing it again as a string.  That would have been less scalable than simply creating a Move instance and adding it to the database.
+
+What were some of the trade-offs or struggles you faced when implementing the new game logic?
+The most difficult aspect of the design was how to represent the board in a way that was both compact yet reasonably playable without a solid front end.    The original Concentration game rules call for a full deck of cards (52), but for greater card type numbers like this, it's difficult to determine which card position to choose just by looking at the board string.  Therefore, I decided to support a variety of board sizes.  A decent front end design won't require the user to enter a specific card position; it'll instead lay out the cards visually and accept touch or click input to choose a card.
+
+It was also difficult to determine a good metric for user performance, since bigger boards are orders of magnitude harder than smaller boards.  My performance metric attempts to control for this by using the combinations formula to award a higher score to users who complete games with bigger boards, but it would be better to collect data from lots of players and then reassess this metric design.
